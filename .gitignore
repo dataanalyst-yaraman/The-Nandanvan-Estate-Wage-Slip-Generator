@@ -1,0 +1,21 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets & credentials (NEVER push these)
+.env
+credentials.json
+
+# Test/debug scripts
+testConnection.py
+main.py
+
+# Template reference (not needed for app)
+WEEKLY WAGE SLIP.docx
