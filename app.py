@@ -33,22 +33,35 @@ WAGES_SHEET_NAME = "Wages"
 # Google Sheets connection (cached)
 # ---------------------------------------------------------------------------
 
+def _get_secret(key: str, default: str = "") -> str:
+    """Read from st.secrets (Streamlit Cloud) first, then fall back to .env."""
+    try:
+        return st.secrets[key]
+    except (KeyError, FileNotFoundError):
+        return os.getenv(key, default)
+
+
 @st.cache_resource(show_spinner=False)
 def get_gspread_client():
-    """Authenticate and return a gspread client using .env credentials."""
+    """Authenticate and return a gspread client using secrets / .env credentials."""
+    private_key = _get_secret("GCP_PRIVATE_KEY")
+    # .env files may double-escape newlines
+    if "\\n" in private_key and "\n" not in private_key.replace("\\n", ""):
+        private_key = private_key.replace("\\n", "\n")
+
+    client_email = _get_secret("GCP_CLIENT_EMAIL")
     creds_dict = {
-        "type": os.getenv("GCP_TYPE"),
-        "project_id": os.getenv("GCP_PROJECT_ID"),
-        "private_key_id": os.getenv("GCP_PRIVATE_KEY_ID"),
-        "private_key": os.getenv("GCP_PRIVATE_KEY", "").replace("\\n", "\n"),
-        "client_email": os.getenv("GCP_CLIENT_EMAIL"),
-        "client_id": os.getenv("GCP_CLIENT_ID"),
+        "type": _get_secret("GCP_TYPE"),
+        "project_id": _get_secret("GCP_PROJECT_ID"),
+        "private_key_id": _get_secret("GCP_PRIVATE_KEY_ID"),
+        "private_key": private_key,
+        "client_email": client_email,
+        "client_id": _get_secret("GCP_CLIENT_ID"),
         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
         "token_uri": "https://oauth2.googleapis.com/token",
         "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
         "client_x509_cert_url": (
-            f"https://www.googleapis.com/robot/v1/metadata/x509/"
-            f"{os.getenv('GCP_CLIENT_EMAIL')}"
+            f"https://www.googleapis.com/robot/v1/metadata/x509/{client_email}"
         ),
     }
     scopes = [
@@ -62,7 +75,7 @@ def get_gspread_client():
 def fetch_wages_data():
     """Fetch all rows from the 'Wages' worksheet."""
     client = get_gspread_client()
-    sheet_url = os.getenv("GCP_SHEET_URL")
+    sheet_url = _get_secret("GCP_SHEET_URL")
     spreadsheet = client.open_by_url(sheet_url)
     ws = spreadsheet.worksheet(WAGES_SHEET_NAME)
     return ws.get_all_values()
