@@ -427,6 +427,20 @@ def _add_wage_slip_page(doc, emp: dict, week_start: date, week_end: date,
     # Apply borders
     _apply_table_borders(table)
 
+    # ── Disclaimer line below the pay slip ──
+    p_disclaimer = doc.add_paragraph()
+    p_disclaimer.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_disclaimer.paragraph_format.space_before = Pt(18)
+    p_disclaimer.paragraph_format.space_after = Pt(0)
+    run_disc = p_disclaimer.add_run(
+        "This is a computer-generated salary slip and does not require "
+        "a physical signature or stamp for validity."
+    )
+    run_disc.bold = True
+    run_disc.font.size = Pt(9)
+    run_disc.font.name = "Calibri"
+    run_disc.font.color.rgb = RGBColor(0x33, 0x33, 0x33)
+
 
 def create_wage_slip_doc(
     weeks_data: list[tuple[date, date, date, list[dict]]],
